@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.title }} - Overleaf LaTeX Studio{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/css/editor.css">
+<!-- Monaco Editor Loader -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="editor-workspace">
+  
+  <!-- Editor Top Navigation Bar -->
+  <header class="editor-navbar">
+    <div class="editor-nav-left">
+      <a href="/dashboard" class="nav-back-btn" title="Back to Projects Dashboard">
+        <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+        <span>Projects</span>
+      </a>
+
+      <div class="project-title-editor">
+        <input type="text" id="project-title-input" class="project-title-input" value="{{ project.title }}" title="Click to rename project">
+      </div>
+    </div>
+
+    <!-- Center Compilation & Sync Group -->
+    <div class="editor-nav-center">
+      <div class="compile-group">
+        <button id="btn-compile" class="btn-compile" title="Compile LaTeX Document (Ctrl+Enter)">
+          <i data-lucide="play" style="width: 15px; height: 15px; fill: white;"></i>
+          <span>Recompile</span>
+        </button>
+
+        <button id="btn-autofix" class="btn btn-secondary btn-sm" title="Auto-Fix LaTeX Syntax Bugs & Repair Code" style="gap: 6px;">
+          <i data-lucide="sparkles" style="width: 14px; height: 14px; color: var(--accent-emerald);"></i>
+          <span>Auto-Fix</span>
+        </button>
+
+        <div id="auto-compile-toggle" class="auto-compile-toggle active" title="Toggle Real-Time Compilation while typing">
+          <span>Auto</span>
+          <div class="toggle-switch"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Controls (Export, PDF, Logs, AI Agent, User) -->
+    <div class="editor-nav-right">
+      <button id="btn-ai-copilot" class="btn-ai-nav" title="AI LaTeX Expert Agent & Code Fixer">
+        <i data-lucide="bot" style="width: 15px; height: 15px;"></i>
+        <span>AI Copilot</span>
+      </button>
+
+      <button id="btn-download-pdf" class="btn btn-secondary btn-sm" title="Download compiled PDF">
+        <i data-lucide="file-down" style="width: 15px; height: 15px; color: var(--accent-emerald);"></i>
+        <span>PDF</span>
+      </button>
+
+      <button id="btn-export-zip" class="btn btn-secondary btn-sm" title="Export Project as ZIP archive">
+        <i data-lucide="folder-archive" style="width: 15px; height: 15px;"></i>
+        <span>ZIP</span>
+      </button>
+
+      <button id="btn-toggle-logs" class="btn btn-ghost btn-sm" title="View Compilation Logs & Error Diagnostics" style="gap: 6px;">
+        <i data-lucide="terminal" style="width: 15px; height: 15px;"></i>
+        <span>Logs</span>
+        <span id="error-count-badge" class="badge badge-emerald" style="font-size: 10px; padding: 2px 6px;">0 errors</span>
+      </button>
+
+      <div class="user-avatar" style="width: 28px; height: 28px; font-size: 11px; margin-left: 4px;" title="{{ user.username }}">
+        {{ user.username[0]|upper }}
+      </div>
+    </div>
+  </header>
+
+  <!-- 3-Pane Split View Container -->
+  <div id="editor-main-split" class="editor-main-split">
+    
+    <!-- 1. Left Sidebar: Project File Explorer -->
+    <aside id="sidebar-panel" class="sidebar-panel">
+      <div class="sidebar-header">
+        <span class="sidebar-title">Project Files</span>
+        <div class="sidebar-actions">
+          <button id="btn-new-file" class="sidebar-btn" title="Create New File (.tex, .bib, .sty)">
+            <i data-lucide="file-plus" style="width: 15px; height: 15px;"></i>
+          </button>
+          <button id="btn-upload-file" class="sidebar-btn" title="Upload Images & Assets">
+            <i data-lucide="upload-cloud" style="width: 15px; height: 15px;"></i>
+          </button>
+          <input type="file" id="file-upload-input" style="display: none;" accept=".tex,.bib,.sty,.cls,.txt,.png,.jpg,.jpeg,.gif,.svg,.pdf">
+        </div>
+      </div>
+
+      <div id="file-tree" class="file-tree">
+        <!-- Injected via JavaScript -->
+      </div>
+    </aside>
+
+    <!-- Split Resizer 1 -->
+    <div id="gutter-left" class="gutter"></div>
+
+    <!-- 2. Center: Code Editor Panel -->
+    <main id="code-panel" class="code-panel">
+      <div id="code-tabs-bar" class="code-tabs-bar">
+        <!-- Active Tab -->
+      </div>
+
+      <div id="monaco-container">
+        <!-- Monaco Editor Mount Point -->
+      </div>
+    </main>
+
+    <!-- Split Resizer 2 -->
+    <div id="gutter-right" class="gutter"></div>
+
+    <!-- 3. Right: Live PDF Preview Panel -->
+    <section id="pdf-panel" class="pdf-panel">
+      <div class="pdf-toolbar">
+        <div class="pdf-toolbar-group">
+          <span style="font-weight: 500; color: var(--text-primary);">PDF Preview</span>
+        </div>
+
+        <div class="pdf-toolbar-group">
+          <button id="btn-zoom-out" class="sidebar-btn" title="Zoom Out">
+            <i data-lucide="zoom-out" style="width: 14px; height: 14px;"></i>
+          </button>
+          <span id="zoom-display" style="min-width: 40px; text-align: center; font-size: 11px;">100%</span>
+          <button id="btn-zoom-in" class="sidebar-btn" title="Zoom In">
+            <i data-lucide="zoom-in" style="width: 14px; height: 14px;"></i>
+          </button>
+          <button id="btn-zoom-reset" class="sidebar-btn" title="Reset Zoom">
+            <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i>
+          </button>
+        </div>
+      </div>
+
+      <div id="pdf-view-container" class="pdf-view-container">
+        <div class="pdf-placeholder">
+          <div class="spinner" style="width: 24px; height: 24px; border-width: 3px;"></div>
+          <p style="font-size: 13px; margin-top: 8px;">Compiling LaTeX document...</p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Bottom Editor Status Bar -->
+  <footer class="editor-status-bar">
+    <div class="status-left">
+      <div id="status-compile" class="status-indicator">
+        <div class="pulse-dot"></div>
+        <span>Ready</span>
+      </div>
+      <span id="status-save" style="color: var(--accent-emerald);">All changes saved</span>
+    </div>
+
+    <div class="status-right">
+      <span id="status-cursor">Ln 1, Col 1</span>
+      <span>LaTeX (UTF-8)</span>
+      <span style="color: var(--accent-emerald-light);">Tectonic 0.17 Engine</span>
+    </div>
+  </footer>
+
+  <!-- AI Copilot Side Drawer -->
+  <div id="ai-copilot-drawer" class="ai-copilot-drawer">
+    <div class="ai-drawer-header">
+      <div class="ai-drawer-title">
+        <i data-lucide="bot" style="width: 18px; height: 18px; color: var(--accent-emerald);"></i>
+        <span>AI LaTeX Copilot</span>
+      </div>
+      <div class="ai-drawer-actions">
+        <button id="btn-ai-settings" class="sidebar-btn" title="AI Model Settings (Gemini / Free LLM / Groq)">
+          <i data-lucide="settings" style="width: 15px; height: 15px;"></i>
+        </button>
+        <button id="btn-close-ai" class="sidebar-btn" title="Close AI Copilot">
+          <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="ai-drawer-content">
+      <!-- Agent Status & Model Tag -->
+      <div id="ai-agent-status" style="display: flex; align-items: center; gap: 8px;">
+        <span class="badge badge-emerald" style="font-size: 10px;">Free AI Agent</span>
+        <span style="color: #94a3b8; font-size: 11px;">Ready to diagnose & repair</span>
+      </div>
+
+      <!-- Quick Action Chips -->
+      <div>
+        <div style="font-size: 11.5px; font-weight: 600; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+          Quick AI Actions
+        </div>
+        <div class="ai-chips-container">
+          <button class="ai-chip" data-prompt="Fix all Underfull and Overfull box warnings (badness 10000) using microtype and raggedbottom.">
+            <i data-lucide="sparkles" style="width: 12px; height: 12px; color: var(--accent-emerald);"></i>
+            <span>Fix Box Badness</span>
+          </button>
+          <button class="ai-chip" data-prompt="Diagnose all compiler warnings and explain line by line how to resolve them.">
+            <i data-lucide="stethoscope" style="width: 12px; height: 12px; color: #38bdf8;"></i>
+            <span>Diagnose Warnings</span>
+          </button>
+          <button class="ai-chip" data-prompt="Polish academic tone, enhance abstract phrasing, and improve grammatical clarity.">
+            <i data-lucide="pen-tool" style="width: 12px; height: 12px; color: #f59e0b;"></i>
+            <span>Polish Academic Tone</span>
+          </button>
+          <button class="ai-chip" data-prompt="Format all tables and figures nicely to fit column width without margin overflow.">
+            <i data-lucide="table" style="width: 12px; height: 12px; color: #a78bfa;"></i>
+            <span>Auto-Fit Tables</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Custom Prompt Input -->
+      <div class="ai-input-wrapper">
+        <textarea id="ai-prompt-input" class="ai-prompt-textarea" placeholder="Ask AI Copilot to fix warnings, explain code, or format equations... (Ctrl+Enter to send)"></textarea>
+        <div class="ai-input-footer">
+          <span style="font-size: 11px; color: #64748b;">Ctrl + Enter</span>
+          <button id="btn-ai-submit-prompt" class="btn btn-primary btn-sm" style="padding: 4px 10px; font-size: 12px; gap: 4px;">
+            <i data-lucide="sparkles" style="width: 13px; height: 13px;"></i>
+            <span>Ask AI</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- AI Fix Preview & Apply Card -->
+      <div id="ai-fix-preview-card" class="ai-fix-preview" style="display: none;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <strong style="color: #34d399; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="check-circle-2" style="width: 16px; height: 16px;"></i>
+            <span>AI Correction Ready</span>
+          </strong>
+        </div>
+        <ul id="ai-changes-list" class="ai-changes-list"></ul>
+        <div style="display: flex; gap: 8px; margin-top: 4px;">
+          <button id="btn-apply-ai-fix" class="btn btn-primary btn-sm" style="flex: 1; font-weight: 600;">
+            <i data-lucide="zap" style="width: 14px; height: 14px;"></i>
+            <span>Apply to Editor & Compile</span>
+          </button>
+          <button id="btn-discard-ai-fix" class="btn btn-secondary btn-sm">
+            <span>Dismiss</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- AI Explanation Response Box -->
+      <div id="ai-response-box" class="ai-response-container">
+        <div style="color: #94a3b8; font-size: 12.5px; display: flex; align-items: flex-start; gap: 8px;">
+          <i data-lucide="info" style="width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px;"></i>
+          <span>Click a quick action above or type an instruction to get real-time LaTeX diagnostics, code repairs, and typesetting optimizations from the AI Agent.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Settings Modal -->
+  <div id="ai-settings-modal" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 460px;">
+      <div class="modal-header">
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="settings" style="width: 18px; height: 18px; color: var(--accent-emerald);"></i>
+          <span>AI Agent Configuration</span>
+        </h3>
+        <button class="modal-close" onclick="document.getElementById('ai-settings-modal').classList.remove('active')">&times;</button>
+      </div>
+
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="form-group">
+          <label class="form-label">AI Engine Provider</label>
+          <select id="ai-settings-provider" class="form-input">
+            <option value="auto">Auto (Free Public LLM + Gemini + Offline Expert)</option>
+            <option value="gemini">Google Gemini 2.0 / 1.5 Flash (Fast & Powerful)</option>
+            <option value="free_llm">Free Public LLM (DeepSeek-V3 / Llama-3.3)</option>
+          </select>
+          <p style="font-size: 11.5px; color: #94a3b8; margin-top: 4px;">
+            By default, the AI Agent runs completely free without requiring an API key.
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Google Gemini API Key (Optional)</label>
+          <input type="password" id="ai-settings-gemini-key" class="form-input" placeholder="AIzaSy... (Get free key from aistudio.google.com)">
+          <p style="font-size: 11.5px; color: #94a3b8; margin-top: 4px;">
+            Provide your free Gemini key for ultra-fast generation with up to 1M token context.
+          </p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="btn-cancel-ai-settings" class="btn btn-secondary btn-sm">Cancel</button>
+        <button id="btn-save-ai-settings" class="btn btn-primary btn-sm">Save Preferences</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Log & Diagnostics Drawer -->
+  <div id="log-drawer" class="log-drawer">
+    <div class="log-drawer-header">
+      <div class="log-drawer-tabs">
+        <button id="tab-errors-btn" class="log-tab-btn active">
+          <i data-lucide="alert-triangle" style="width: 14px; height: 14px; color: #fb7185;"></i>
+          <span>Errors & Diagnostics</span>
+        </button>
+        <button id="tab-fixes-btn" class="log-tab-btn">
+          <i data-lucide="sparkles" style="width: 14px; height: 14px; color: var(--accent-emerald);"></i>
+          <span>Auto-Fixes & Healed Bugs</span>
+        </button>
+        <button id="tab-raw-btn" class="log-tab-btn">
+          <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
+          <span>Raw Compiler Log</span>
+        </button>
+      </div>
+
+      <button id="btn-close-logs" class="sidebar-btn" title="Close Logs Drawer">
+        <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+      </button>
+    </div>
+
+    <div class="log-drawer-content">
+      <div id="log-error-list">
+        <!-- Error Cards Injected Here -->
+      </div>
+      <div id="log-fixes-list" style="display: none;">
+        <!-- Auto-Fix Cards Injected Here -->
+      </div>
+      <div id="log-raw-content" class="raw-log-view" style="display: none;">
+        <!-- Raw Logs -->
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script src="/static/js/latex-completions.js"></script>
+<script src="/static/js/pdf-viewer.js"></script>
+<script src="/static/js/editor.js"></script>
+<script src="/static/js/ai-copilot.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    window.editorApp = new OverleafEditor('{{ project.id }}', '{{ project.main_file }}');
+    window.aiCopilot = new AICopilotController(window.editorApp);
+  });
+</script>
+{% endblock %}
+

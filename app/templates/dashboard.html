@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Projects Dashboard - Overleaf LaTeX Studio{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/css/dashboard.css">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+  
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <a href="/dashboard" class="nav-brand">
+      <div class="brand-icon-box">
+        <i data-lucide="edit-3" style="width: 20px; height: 20px;"></i>
+      </div>
+      <div class="brand-text">
+        Overleaf <span style="font-weight: 400; color: var(--text-secondary);">Studio</span>
+        <span class="badge badge-emerald">Local Pro</span>
+      </div>
+    </a>
+
+    <div class="nav-user">
+      <div class="user-profile-pill" onclick="handleLogout()" title="Click to Logout">
+        <div class="user-avatar">{{ user.username[0]|upper }}</div>
+        <span class="user-name">{{ user.full_name or user.username }}</span>
+        <i data-lucide="log-out" style="width: 15px; height: 15px; color: var(--text-muted); margin-left: 4px;"></i>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Dashboard Main Body -->
+  <main class="dashboard-main">
+
+    <!-- Header & Action Button -->
+    <div class="dashboard-header">
+      <div class="dashboard-title-area">
+        <h1>LaTeX Projects</h1>
+        <p>Manage, write, and compile your academic papers, slides, and reports locally.</p>
+      </div>
+
+      <button class="btn btn-primary btn-lg" onclick="dashboardApp.openCreateModal('blank')">
+        <i data-lucide="plus" style="width: 18px; height: 18px;"></i> New Project
+      </button>
+    </div>
+
+    <!-- Template Starter Gallery -->
+    <section class="templates-section">
+      <div class="section-heading">
+        <h2>
+          <i data-lucide="layout-template" style="width: 18px; height: 18px; color: var(--accent-emerald);"></i>
+          Starter Templates
+        </h2>
+      </div>
+
+      <div class="templates-grid">
+        {% for tpl_id, tpl in templates.items() %}
+        <div class="template-card" onclick="dashboardApp.openCreateModal('{{ tpl.id }}')">
+          <div class="template-icon-wrapper">
+            <i data-lucide="{{ tpl.icon }}" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div class="template-info">
+            <h4>{{ tpl.name }}</h4>
+            <p>{{ tpl.description }}</p>
+          </div>
+          <div style="margin-top: auto; display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--accent-emerald-light); font-weight: 500;">
+            <span>Use template</span>
+            <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Projects List & Search Controls -->
+    <div class="projects-bar">
+      <div class="search-box">
+        <i data-lucide="search" class="search-icon" style="width: 16px; height: 16px;"></i>
+        <input type="text" id="search-input" class="form-input" placeholder="Search your LaTeX projects...">
+      </div>
+
+      <div class="projects-actions">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 12.5px; color: var(--text-muted);">Sort by:</span>
+          <select id="sort-select" class="form-select" style="padding: 6px 12px; font-size: 12.5px; width: auto;">
+            <option value="updated_desc">Recently Modified</option>
+            <option value="created_desc">Creation Date</option>
+            <option value="title_asc">Title (A-Z)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Projects Grid Container -->
+    <div id="projects-container" class="projects-grid">
+      <!-- Injected via JavaScript -->
+    </div>
+
+  </main>
+</div>
+
+<!-- Create Project Modal -->
+<div id="new-project-modal" class="modal-backdrop">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>
+        <i data-lucide="folder-plus" style="width: 20px; height: 20px; color: var(--accent-emerald);"></i>
+        Create New LaTeX Project
+      </h3>
+      <button class="sidebar-btn" onclick="dashboardApp.closeCreateModal()">
+        <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+      </button>
+    </div>
+
+    <form onsubmit="dashboardApp.handleCreateProject(event)">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="modal-project-title">Project Title</label>
+          <input type="text" id="modal-project-title" class="form-input" placeholder="e.g. Quantum Neural Networks Paper" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="modal-template-select">Starter Template</label>
+          <select id="modal-template-select" class="form-select">
+            {% for tpl_id, tpl in templates.items() %}
+            <option value="{{ tpl.id }}">{{ tpl.name }} ({{ tpl.category }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="modal-project-desc">Description (Optional)</label>
+          <textarea id="modal-project-desc" class="form-textarea" rows="2" placeholder="Brief project summary..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="dashboardApp.closeCreateModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          <i data-lucide="check" style="width: 16px; height: 16px;"></i> Create & Open
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script src="/static/js/dashboard.js"></script>
+<script>
+  let dashboardApp;
+  document.addEventListener('DOMContentLoaded', () => {
+    dashboardApp = new DashboardApp();
+  });
+</script>
+{% endblock %}

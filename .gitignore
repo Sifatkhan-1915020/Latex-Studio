@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+.venv
+ENV/
+
+# Environment Variables
+.env
+.env.local
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project runtime data (keep folder structure with .gitkeep)
+data/overleaf.db
+data/workspaces/*
+!data/workspaces/.gitkeep
+
+# System & OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test build artifacts
+test_build/
+qa_audit_results.json
+bin/git/
+bin/tectonic*
+
+
+

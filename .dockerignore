@@ -1,0 +1,26 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local virtual environment
+venv/
+.env
+.venv
+env/
+ENV/
+
+# Git
+.git/
+.gitignore
+.github/
+
+# Windows binaries (Docker installs Linux native Tectonic)
+bin/tectonic.exe
+
+# Temporary scratch and ide data
+.gemini/
+.idea/
+.vscode/
+scratch/
+test_*.py
