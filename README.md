@@ -23,76 +23,45 @@ A complete, profound, open-source **Overleaf-style LaTeX Web IDE & Compiler** bu
 
 ---
 
-## 🐳 Quick Start with Docker (Recommended)
+## ⚡ Quick Start with Python (Recommended)
 
-Anyone can clone the repository from GitHub and run it on their PC with a single command!
-
-### Option 1: Docker Compose
+Run directly on your PC with zero setup, zero virtualization, and zero heavy TeXLive downloads!
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/Sifatkhan-1915020/LatexFriend.git
-cd LatexFriend
+git clone https://github.com/Sifatkhan-1915020/Latex-Studio.git
+cd Latex-Studio
 
-# 2. Start the container
-docker compose up -d --build
+# 2. Install dependencies
+pip install -r requirements.txt
 
-# 3. Open in your browser
-# Visit http://localhost:8000
+# 3. Start the application
+python run.py
 ```
+
+👉 The app will automatically initialize the database, prepare the standalone compiler, and open **[http://127.0.0.1:8000](http://127.0.0.1:8000)** in your browser!
+
+---
+
+## 🐳 Optional: Quick Start with Docker
+
+If you have Docker Desktop installed and running on your system:
+
+```bash
+# Clone the repository
+git clone https://github.com/Sifatkhan-1915020/Latex-Studio.git
+cd Latex-Studio
+
+# Start the container
+docker compose up -d --build
+```
+Open **[http://localhost:8000](http://localhost:8000)** in your browser.
 
 To stop the container:
 ```bash
 docker compose down
 ```
 
-### Option 2: Docker CLI
-
-```bash
-# Build the Docker image
-docker build -t overleaf-studio .
-
-# Run with persistent data volume
-docker run -d -p 8000:8000 -v $(pwd)/data:/app/data --name overleaf-studio overleaf-studio
-```
-
----
-
-## 💻 Quick Start with Local Python
-
-If you prefer running without Docker:
-
-### 1. Prerequisites
-- **Python 3.12+**
-- Git
-
-### 2. Setup & Installation
-```bash
-# Clone the repository
-git clone https://github.com/Sifatkhan-1915020/LatexFriend.git
-cd LatexFriend
-
-# Create virtual environment
-python -m venv venv
-# On Windows:
-.\venv\Scripts\activate
-# On Linux/macOS:
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### 3. Run the Application
-```bash
-python run.py
-```
-Or start directly with Uvicorn:
-```bash
-uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
-```
-
-Open **[http://127.0.0.1:8000](http://127.0.0.1:8000)** in your browser.
 
 ---
 
